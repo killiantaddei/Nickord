@@ -14,6 +14,7 @@ struct FriendsListView: View {
     @State private var showAddFriend = false
     @State private var showRequests = false
     @State private var selectedPrivateRoom: Room?
+    @State private var selectedFriend: NickordUser?
     @State private var showPrivateRoom = false
     @State private var errorMessage = ""
     private let firestore = FirestoreService.shared
@@ -145,9 +146,9 @@ struct FriendsListView: View {
                 .environmentObject(friendsVM)
         }
         .navigationDestination(isPresented: $showPrivateRoom) {
-            if let room = selectedPrivateRoom {
-                RoomChatView(room: room)
-                    .environmentObject(friendsVM)
+            if let room = selectedPrivateRoom, let friend = selectedFriend {
+                ChatView(friend: friend, room: room)
+                    .environmentObject(authVM)
             }
         }
         .alert("Errore", isPresented: .constant(!errorMessage.isEmpty)) {
@@ -184,6 +185,7 @@ struct FriendsListView: View {
                     friendID: friendID,
                     friendName: friendName
                 )
+                selectedFriend = friend
                 selectedPrivateRoom = room
                 showPrivateRoom = true
             } catch {

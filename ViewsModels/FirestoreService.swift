@@ -244,6 +244,30 @@ final class FirestoreService {
         )
     }
 
+    // MARK: - Chat amicizie
+
+    func fetchPrivateRoomsForUser(_ userID: String) async throws -> [Room] {
+        let records: [NocoDBRoomRecord] = try await db.fetchRecords(
+            tableID: db.tableRooms,
+            filter: "(isPrivate,eq,true)",
+            pageSize: 200
+        )
+        return records.compactMap { mapRoom($0) }.filter { room in
+            guard let invited = room.invitedUserIDs else { return false }
+            return invited.contains(userID) && invited.count == 2 && (room.password == nil || room.password?.isEmpty == true)
+        }
+    }
+
+    func fetchLastMessage(roomID: String) async throws -> Message? {
+        let records: [NocoDBMessageRecord] = try await db.fetchRecords(
+            tableID: db.tableMessages,
+            filter: "(roomID,eq,\(roomID))",
+            sort: "-timestamp",
+            pageSize: 1
+        )
+        return records.first.flatMap { mapMessage($0) }
+    }
+
     // MARK: - Messaggi
 
     func subscribeMessages(

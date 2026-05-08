@@ -44,8 +44,10 @@ struct ContentView: View {
                 case 0:
                     FriendsListView(room: friendsVM.room)
                 case 1:
-                    RoomsListView()
+                    FriendChatsView()
                 case 2:
+                    RoomsListView()
+                case 3:
                     ProfileView()
                 default:
                     EmptyView()
@@ -79,16 +81,23 @@ struct ContentView: View {
             )
 
             TabBarItem(
+                icon: "bubble.left.and.bubble.right.fill",
+                label: "Chat",
+                index: 1,
+                selected: $selectedTab
+            )
+
+            TabBarItem(
                 icon: "house.fill",
                 label: "Stanze",
-                index: 1,
+                index: 2,
                 selected: $selectedTab
             )
 
             TabBarItem(
                 icon: "gearshape.fill",
                 label: "Profilo",
-                index: 2,
+                index: 3,
                 selected: $selectedTab
             )
         }
