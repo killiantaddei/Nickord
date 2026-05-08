@@ -13,7 +13,6 @@ class FriendsViewModel: ObservableObject {
     private var currentUserID: String?
     private var requestsHandle: SubscriptionHandle?
     private var friendsHandle: SubscriptionHandle?
-    private var knownRequestIDs: Set<String> = []
 
     init(room: Room) {
         self.room = room
@@ -30,24 +29,10 @@ class FriendsViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        knownRequestIDs = Set(pendingRequests.compactMap { $0.id })
-
         requestsHandle = firestore.subscribeFriendRequests(
             forUserID: userID,
             onUpdate: { [weak self] requests in
-                guard let self else { return }
-                let newRequests = requests.filter { req in
-                    guard let id = req.id else { return false }
-                    return !self.knownRequestIDs.contains(id)
-                }
-                for req in newRequests {
-                    NotificationManager.shared.sendFriendRequestNotification(fromUsername: req.fromUsername)
-                    if let id = req.id {
-                        self.knownRequestIDs.insert(id)
-                    }
-                }
-                self.pendingRequests = requests
-                NotificationManager.shared.updateBadge(count: requests.count)
+                self?.pendingRequests = requests
             },
             onError: { _ in }
         )
@@ -81,11 +66,7 @@ class FriendsViewModel: ObservableObject {
         guard let reqID = request.id else { return }
         store.respondToFriendRequest(requestID: reqID, accept: accept)
         pendingRequests.removeAll { $0.id == reqID }
-        knownRequestIDs.remove(reqID)
-        NotificationManager.shared.updateBadge(count: pendingRequests.count)
-
         if accept {
-            NotificationManager.shared.sendFriendAcceptedNotification(username: request.fromUsername)
             if let updatedUser = store.user(id: request.fromUserID) {
                 if !friends.contains(where: { $0.id == updatedUser.id }) {
                     friends.append(updatedUser)
